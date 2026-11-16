@@ -15,15 +15,15 @@
 
 #include <stdint.h>
 
-#define INPUT_OFF GPIO_NUM_18
-#define INPUT_LOW GPIO_NUM_19
-#define INPUT_NORMAL GPIO_NUM_21
-#define INPUT_HIGH GPIO_NUM_22
+#define INPUT_OFF GPIO_NUM_22
+#define INPUT_LOW GPIO_NUM_23
+#define INPUT_NORMAL GPIO_NUM_33
+#define INPUT_HIGH GPIO_NUM_32
 
-#define OUTPUT_OFF GPIO_NUM_23
-#define OUTPUT_LOW GPIO_NUM_25
+#define OUTPUT_OFF GPIO_NUM_18
+#define OUTPUT_LOW GPIO_NUM_19
 #define OUTPUT_NORMAL GPIO_NUM_26
-#define OUTPUT_HIGH GPIO_NUM_27
+#define OUTPUT_HIGH GPIO_NUM_25
 
 #define DEBOUNCE_SAMPLE_MS    10   /* how often the task samples the buttons */
 #define DEBOUNCE_STABLE_COUNT 3    /* samples in a row = 30 ms stable        */
