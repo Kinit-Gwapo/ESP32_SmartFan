@@ -625,7 +625,7 @@ static void firebase_auth_listener_task(void *pvParameters) {
     while(true) {
         bool logged_waiting = false;
         while(!network_is_connected()) {
-            if(!network_is_connected()) {
+            if(!logged_waiting) {
                 ESP_LOGI(TAG, "Waiting for WiFi before connecting to Firebase...");
                 logged_waiting = true;
             }
