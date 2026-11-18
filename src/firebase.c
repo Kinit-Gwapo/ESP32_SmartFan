@@ -623,8 +623,12 @@ static void firebase_auth_listener_task(void *pvParameters) {
     uint32_t retry_ms = 5000;
 
     while(true) {
+        bool logged_waiting = false;
         while(!network_is_connected()) {
-            ESP_LOGI(TAG, "Waiting for WiFi before connecting to Firebase...");
+            if(!network_is_connected()) {
+                ESP_LOGI(TAG, "Waiting for WiFi before connecting to Firebase...");
+                logged_waiting = true;
+            }
             vTaskDelay(pdMS_TO_TICKS(1000));
         }
 
