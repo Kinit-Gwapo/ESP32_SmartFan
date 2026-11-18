@@ -345,6 +345,7 @@ static esp_err_t firebase_sign_in(char *token_out, size_t token_capacity)
     if (response.overflow) return ESP_ERR_INVALID_SIZE;
     if (status != 200) {
         ESP_LOGE(TAG, "Firebase sign-in returned HTTP %d: %s", status, response.body);
+        if(strstr(response.body, "TOO_MANY_ATTEMPTS") != NULL) return ESP_ERR_NOT_ALLOWED;
         return ESP_FAIL;
     }
 
@@ -619,6 +620,8 @@ static esp_err_t firebase_listen_once(const char *token)
 
 
 static void firebase_auth_listener_task(void *pvParameters) {
+    uint32_t retry_ms = 5000;
+
     while(true) {
         while(!network_is_connected()) {
             ESP_LOGI(TAG, "Waiting for WiFi before connecting to Firebase...");
@@ -628,6 +631,8 @@ static void firebase_auth_listener_task(void *pvParameters) {
         char token[TOKEN_SIZE] = {0};
         esp_err_t err = firebase_sign_in(token, sizeof(token));
         if(err == ESP_OK) {
+            retry_ms = 5000;
+
             /* Publish a fresh auth sesion, then request one full state sync */
             auth_session_set(token);
             fan_speed_t actual_speed = fan_get_speed();
@@ -636,7 +641,14 @@ static void firebase_auth_listener_task(void *pvParameters) {
             }
             ESP_LOGI(TAG, "Listening for updates at /fan/command");
             err = firebase_listen_once(token);
+        } else if(err == ESP_ERR_NOT_ALLOWED) {
+            retry_ms = 10 * 60 * 1000; /* 10 minutes */
+        } else if(!network_is_connected()) {
+            retry_ms = 5000;
+        } else {
+            retry_ms = (retry_ms >= 300000) ? 300000 : retry_ms * 2;
         }
+
         /* Treat each listener session ending as auth/session loss */
         auth_session_set(NULL);
         memset(token, 0, sizeof(token));
@@ -644,9 +656,9 @@ static void firebase_auth_listener_task(void *pvParameters) {
         if(!network_is_connected()) {
             ESP_LOGW(TAG, "Wi-Fi disconnected; waiting for network to return");
         } else {
-            ESP_LOGW(TAG, "Firebase listener will retry in 5 seconds");
+            ESP_LOGW(TAG, "Firebase listener will retry in %lu seconds", (unsigned long)(retry_ms / 1000));
         }
-        vTaskDelay(pdMS_TO_TICKS(5000));
+        vTaskDelay(pdMS_TO_TICKS(retry_ms));
     }
 }
 
